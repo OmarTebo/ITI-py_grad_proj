@@ -1,4 +1,6 @@
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QTextEdit, QHBoxLayout, QMenuBar, QMenu, QStatusBar
+from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget,
+                             QTextEdit, QHBoxLayout, QMenuBar,
+                             QMenu, QStatusBar, QFileDialog, QMessageBox)
 from PyQt6 import QtCore
 from PyQt6.QtGui import QAction
 import sys
@@ -9,7 +11,7 @@ class MarkdownEditor(QMainWindow):
         
         self.window_width, self.window_height = 700, 500
         self.setMinimumSize(self.window_width, self.window_height)
-        self.setWindowTitle("My Journal App")
+        self.setWindowTitle("Untitled - My Journal App")
         self.setStyleSheet("""
                             QWidget {
                                 font-size: 18px;
@@ -19,6 +21,9 @@ class MarkdownEditor(QMainWindow):
         self.main_window = QWidget()
         self.layout = QHBoxLayout(self.main_window)
         self.setCentralWidget(self.main_window)
+        
+        # Track the current file path
+        self.current_file_path = None
         
         self.init_ui()
         self.init_config_signals()
@@ -105,12 +110,85 @@ class MarkdownEditor(QMainWindow):
     def init_config_signals(self):
         self.md_editor.textChanged.connect(self.markdown_update)
         self.actionNew.triggered.connect(self.new_file)
+        self.actionSave.triggered.connect(self.save_file)
+        self.actionSave_As.triggered.connect(self.save_as_file)
+        self.actionOpen.triggered.connect(self.open_file)
         
     def markdown_update(self):
         self.md_viewer.setMarkdown(self.md_editor.toPlainText())
         
     def new_file(self):
-        print("New was clicked")
+        # Clear the editor and viewer
+        self.md_editor.clear()
+        self.md_viewer.clear()
+        
+        # Reset the file path and window title
+        self.current_file_path = None
+        self.setWindowTitle("Untitled - My Journal App")
+        
+    def save_file(self):
+        if self.current_file_path:
+            # Save to the existing file
+            try:
+                with open(self.current_file_path, "w", encoding="utf-8") as file:
+                    file.write(self.md_editor.toPlainText())
+                self.statusbar.showMessage(f"File saved: {self.current_file_path}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+        else:
+            # If no file path, use "Save As"
+            self.save_as_file()
+        
+    def save_as_file(self):
+        # Open a file dialog to get the file name
+        fileName, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Markdown File",
+            "",  # Start in the current directory
+            "Markdown Files (*.md);;All Files (*)"  # Filter for .md files
+        )
+        
+        if fileName:
+            # Ensure the file has a .md extension
+            if not fileName.endswith(".md"):
+                fileName += ".md"
+            
+            try:
+                # Write the content of md_editor to the file
+                with open(fileName, "w", encoding="utf-8") as file:
+                    file.write(self.md_editor.toPlainText())
+                
+                # Update the current file path and window title
+                self.current_file_path = fileName
+                self.setWindowTitle(f"{fileName} - My Journal App")
+                self.statusbar.showMessage(f"File saved successfully: {fileName}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to save file: {str(e)}")
+        
+    def open_file(self):
+        # Open a file dialog to select a file
+        fileName, _ = QFileDialog.getOpenFileName(
+            self,
+            "Open Markdown File",
+            "",  # Start in the current directory
+            "Markdown Files (*.md);;All Files (*)"  # Filter for .md files
+        )
+        
+        if fileName:
+            try:
+                # Read the content of the file
+                with open(fileName, "r", encoding="utf-8") as file:
+                    content = file.read()
+                
+                # Load the content into the editor
+                self.md_editor.setPlainText(content)
+                
+                # Update the current file path and window title
+                self.current_file_path = fileName
+                self.setWindowTitle(f"{fileName} - My Journal App")
+                self.statusbar.showMessage(f"File opened: {fileName}", 3000)
+            except Exception as e:
+                QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")
         
         
 if __name__ == '__main__':
