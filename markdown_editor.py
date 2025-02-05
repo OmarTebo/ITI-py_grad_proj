@@ -109,10 +109,15 @@ class MarkdownEditor(QMainWindow):
         
     def init_config_signals(self):
         self.md_editor.textChanged.connect(self.markdown_update)
+        
         self.actionNew.triggered.connect(self.new_file)
         self.actionSave.triggered.connect(self.save_file)
         self.actionSave_As.triggered.connect(self.save_as_file)
         self.actionOpen.triggered.connect(self.open_file)
+        
+        self.actionEditor_Only.triggered.connect(self.show_editor_only)
+        self.actionViewer_Only.triggered.connect(self.show_viewer_only)
+        self.actionSplit_View.triggered.connect(self.show_split_view)
         
     def markdown_update(self):
         self.md_viewer.setMarkdown(self.md_editor.toPlainText())
@@ -189,7 +194,18 @@ class MarkdownEditor(QMainWindow):
                 self.statusbar.showMessage(f"File opened: {fileName}", 3000)
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Failed to open file: {str(e)}")
+                
+    def show_editor_only(self):
+        self.md_editor.show()
+        self.md_viewer.hide()
         
+    def show_viewer_only(self):
+        self.md_editor.hide()
+        self.md_viewer.show()
+        
+    def show_split_view(self):
+        self.md_editor.show()
+        self.md_viewer.show()
         
 if __name__ == '__main__':
     app = QApplication(sys.argv)
